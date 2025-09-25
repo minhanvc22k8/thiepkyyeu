@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click Để Mở Thư 💌</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Paytone+One&display=swap" rel="stylesheet">
+    <style>
+        /* --- CSS Styling --- */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #fce4ec;
+            font-family: sans-serif;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        .envelope-wrapper {
+            position: relative;
+            width: 400px;
+            height: 260px;
+            cursor: default;
+        }
+
+        .envelope-wrapper > img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: all 0.5s ease-in-out;
+        }
+
+        .body-back { z-index: 1; }
+        .body-top { z-index: 4; }
+        .flap { z-index: 5; transform-origin: top; }
+
+        .card {
+            z-index: 2;
+            opacity: 0;
+            width: 180px !important;
+            height: 260px !important;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(65%, 10%);
+        }
+
+        #nameInput {
+            margin-top: 20px;
+            padding: 10px 15px;
+            font-size: 1rem;
+            border-radius: 20px;
+            border: 2px solid #f8bbd0;
+            width: 250px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        #nameInput:focus {
+            border-color: #e91e63;
+        }
+
+        #openButton {
+            margin-top: 15px;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            border: 2px solid #e91e63;
+            border-radius: 30px;
+            background-color: white;
+            color: #e91e63;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        #openButton:hover {
+            background-color: #e91e63;
+            color: white;
+        }
+        #openButton:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #e0e0e0;
+            border-color: #bdbdbd;
+            color: #9e9e9e;
+        }
+
+        .envelope-wrapper.open .flap {
+            transform: rotateX(180deg);
+            top: 2%;
+            z-index: 1;
+        }
+        .envelope-wrapper.open .card {
+            opacity: 1;
+            top: -60px;
+            left: -10px;
+        }
+
+        .widget-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .widget-content-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .widget-content {
+            max-width: 80vw;
+            max-height: 85vh;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: zoomIn 0.3s ease-in-out;
+        }
+        
+        /* --- CẬP NHẬT Ở ĐÂY --- */
+        .recipient-name {
+            position: absolute;
+            top: 42%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Paytone One', sans-serif;
+            font-size: 2.2vw;
+            color: #b084cc;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+            padding: 5px;
+            width: 100%;
+            text-align: center;
+            
+            /* Thêm vào để ẩn đi ban đầu và áp dụng animation */
+            opacity: 0; 
+            animation: revealText 0.6s ease-in-out 0.4s forwards; /* Tên animation, thời gian, độ trễ, giữ lại trạng thái cuối */
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.5); } to { transform: scale(1); } }
+
+        /* --- KEYFRAME MỚI CHO HIỆU ỨNG CHỮ --- */
+        @keyframes revealText {
+            from {
+                opacity: 0;
+                transform: translate(-50%, 20px); /* Bắt đầu ở dưới 20px */
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%); /* Trở về vị trí ban đầu */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="envelope-wrapper" id="envelope">
+        <img class="body-back" src="bia.png" alt="Thân sau của thư">
+        <img id="cardImage" class="card" src="butto.svg" alt="Thiệp mời">
+        <img class="body-top" src="phiatren.png" alt="Thân trên của thư">
+        <img class="flap" src="nap.png" alt="Nắp thư">
+    </div>
+
+    <input type="text" id="nameInput" placeholder="Nhập tên của bạn...">
+    <button id="openButton" disabled>💌 Mở thiệp 💌</button>
+
+    <div id="cardWidget" class="widget-overlay">
+        <div class="widget-content-wrapper">
+            <img class="widget-content" src="butto.svg" alt="Thiệp mời phóng to">
+            <div id="recipientName" class="recipient-name"></div>
+        </div>
+    </div>
+
+    <script>
+        const envelope = document.getElementById('envelope');
+        const openButton = document.getElementById('openButton');
+        const cardWidget = document.getElementById('cardWidget');
+        const nameInput = document.getElementById('nameInput');
+        const recipientName = document.getElementById('recipientName');
+
+        nameInput.addEventListener('input', () => {
+            if (nameInput.value.trim() !== '') {
+                openButton.disabled = false;
+            } else {
+                openButton.disabled = true;
+            }
+        });
+
+        openButton.addEventListener('click', () => {
+            if (envelope.classList.contains('open')) {
+                cardWidget.style.display = 'flex';
+            } else {
+                const enteredName = nameInput.value.trim();
+                recipientName.textContent = enteredName;
+
+                envelope.classList.add('open');
+                openButton.textContent = '✨ Phóng to thiệp ✨';
+                nameInput.style.display = 'none';
+            }
+        });
+
+        cardWidget.addEventListener('click', () => {
+            cardWidget.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
